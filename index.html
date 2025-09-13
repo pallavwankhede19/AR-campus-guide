@@ -49,7 +49,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script>
-    const BASE_URL = "https://pallavwankhede19.github.io/AR-campus-guide/";
+    // ✅ Dynamically detect base URL (works for any GitHub Pages repo)
+    const BASE_URL = window.location.origin + window.location.pathname;
 
     let labels = [];
     let mapData = {};
@@ -57,21 +58,18 @@
 
     async function loadResources() {
       try {
-        // Labels
         console.log("Fetching labels.json...");
         const labelsRes = await fetch(BASE_URL + "labels.json");
         if (!labelsRes.ok) throw new Error("Labels fetch failed: " + labelsRes.status);
         labels = await labelsRes.json();
         console.log("✅ Labels loaded:", labels);
 
-        // Map
         console.log("Fetching map.json...");
         const mapRes = await fetch(BASE_URL + "map.json");
         if (!mapRes.ok) throw new Error("Map fetch failed: " + mapRes.status);
         mapData = await mapRes.json();
         console.log("✅ Map loaded:", mapData);
 
-        // Model
         console.log("Loading model.json...");
         model = await tf.loadLayersModel(BASE_URL + "model.json");
         console.log("✅ Model loaded");
@@ -115,7 +113,7 @@
       alert("Navigation starting to: " + dest);
     });
 
-    // Start
+    // Start everything
     loadResources();
     setupWebcam();
   </script>
