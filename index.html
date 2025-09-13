@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AR Campus Guide</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; text-align: center; background: #f5f5f5; }
+    video { width: 100%; height: auto; }
+    .overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,0.7); color: #fff; flex-direction: column;
+      z-index: 10;
+    }
+    .card {
+      background: #fff; color: #000; padding: 20px; border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2); width: 300px;
+    }
+    select, button {
+      margin-top: 10px; padding: 8px 12px; font-size: 14px;
+      border-radius: 6px; border: 1px solid #ccc;
+    }
+    button {
+      background: #007bff; color: #fff; border: none; cursor: pointer;
+    }
+    button:hover { background: #0056b3; }
+    #status { margin-top: 15px; font-size: 14px; color: red; }
+  </style>
+</head>
+<body>
+
+  <video id="webcam" autoplay playsinline></video>
+
+  <div class="overlay" id="overlay">
+    <div class="card">
+      <h2>AR Campus Guide</h2>
+      <div id="status">Loading resources...</div>
+      <select id="destination"></select><br>
+      <button id="startBtn">Start Guiding</button>
+    </div>
+  </div>
+
+  <div id="locationBox" style="position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+       background: #fff; padding: 12px 18px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+    <b>Current Location:</b> <span id="currentLocation">Determining...</span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+  <script>
+    let labels = [];
+    let mapData = {};
+    let model;
+
+    async function loadResources() {
+      try {
+        console.log("Fetching labels.json...");
+        const labelsRes = await fetch("./labels.json");
+        if (!labelsRes.ok) throw new Error("Labels fetch failed: " + labelsRes.status);
+        labels = await labelsRes.json();
+        console.log("✅ Labels loaded:", labels);
+
+        console.log("Fetching map.json...");
+        const mapRes = await fetch("./map.json");
+        if (!mapRes.ok) throw new Error("Map fetch failed: " + mapRes.status);
+        mapData = await mapRes.json();
+        console.log("✅ Map loaded:", mapData);
+
+        console.log("Loading model.json...");
+        model = await tf.loadLayersModel("./model.json");
+        console.log("✅ Model loaded");
+
+        document.getElementById("status").innerText = "Ready!";
+        populateDestinations();
+      } catch (err) {
+        console.error("❌ Error loading resources:", err);
+        document.getElementById("status").innerText = "Error loading resources. Check console.";
+      }
+    }
+
+    function populateDestinations() {
+      const select = document.getElementById("destination");
+      select.innerHTML = "";
+      labels.forEach(label => {
+        const opt = document.createElement("option");
+        opt.value = label;
+        opt.textContent = label;
+        select.appendChild(opt);
+      });
+    }
+
+    async function setupWebcam() {
+      const webcamElement = document.getElementById("webcam");
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        webcamElement.srcObject = stream;
+      } catch (err) {
+        console.error("❌ Webcam error:", err);
+        document.getElementById("status").innerText = "Webcam access denied.";
+      }
+    }
+
+    document.getElementById("startBtn").addEventListener("click", () => {
+      alert("Navigation starting to: " + document.getElementById("destination").value);
+    });
+
+    // Start
+    loadResources();
+    setupWebcam();
+  </script>
+</body>
+</html>
